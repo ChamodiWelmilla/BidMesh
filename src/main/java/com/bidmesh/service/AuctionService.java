@@ -28,12 +28,28 @@ public class AuctionService {
     private final AuctionRepository auctionRepository;
     private final BidRepository bidRepository;
     private final UserRepository userRepository;
+    private final com.bidmesh.repository.ItemRepository itemRepository;
     private final RedissonClient redissonClient;
     private final RedisTemplate<String, Object> redisTemplate;
     private final ObjectMapper objectMapper;
 
     private static final String AUCTION_CACHE_KEY = "auction:";
     private static final String AUCTION_LOCK_KEY = "auction_lock:";
+
+    @Transactional
+    public Auction createAuction(Auction auction, Long creatorId, Long itemId) {
+        User creator = userRepository.findById(creatorId)
+                .orElseThrow(() -> new RuntimeException("Creator not found"));
+        com.bidmesh.model.Item item = itemRepository.findById(itemId)
+                .orElseThrow(() -> new RuntimeException("Item not found"));
+
+        auction.setCreator(creator);
+        auction.setItem(item);
+        auction.setCurrentPrice(auction.getStartPrice());
+        auction.setStatus(AuctionStatus.ACTIVE);
+        
+        return auctionRepository.save(auction);
+    }
 
     /**
      * Cache-Aside Pattern Implementation

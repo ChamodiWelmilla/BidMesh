@@ -25,6 +25,13 @@ public class AuctionController {
         return ResponseEntity.ok(auctionService.getAllAuctions());
     }
 
+    @PostMapping
+    public ResponseEntity<Auction> createAuction(@RequestBody Auction auction, 
+                                               @RequestParam Long creatorId, 
+                                               @RequestParam Long itemId) {
+        return ResponseEntity.ok(auctionService.createAuction(auction, creatorId, itemId));
+    }
+
     @PostMapping("/{id}/bids")
     public ResponseEntity<com.bidmesh.dto.BidResponse> placeBid(@PathVariable Long id, @RequestBody BidRequest bidRequest) {
         return ResponseEntity.ok(auctionService.placeBid(id, bidRequest));

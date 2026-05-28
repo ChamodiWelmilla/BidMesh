@@ -3,7 +3,10 @@ import { Link } from 'react-router-dom';
 
 interface Auction {
   id: number;
-  itemName: string;
+  item: {
+    name: string;
+    description: string;
+  };
   currentPrice: number;
   endTime: string;
 }
@@ -42,7 +45,7 @@ const AuctionList = () => {
         <div className="auction-grid">
           {auctions.map(auction => (
             <div key={auction.id} className="card">
-              <h3>{auction.itemName}</h3>
+              <h3>{auction.item?.name || (auction as any).itemName || 'Unnamed Item'}</h3>
               <p className="price-tag">${auction.currentPrice}</p>
               <p>Ends: {new Date(auction.endTime).toLocaleString()}</p>
               <Link to={`/auction/${auction.id}`} className="btn btn-primary" style={{textDecoration: 'none', display: 'inline-block', marginTop: '1rem'}}>

@@ -1,11 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import { useParams } from 'react-router-dom';
 import { WebSocketService } from '../services/WebSocketService';
+import { AuthContext } from '../App';
 
 interface Auction {
   id: number;
-  itemName: string;
-  description: string;
+  item: {
+    name: string;
+    description: string;
+  };
   currentPrice: number;
 }
 
@@ -16,6 +19,7 @@ interface BidNotification {
 }
 
 const AuctionDetail = () => {
+  const auth = useContext(AuthContext);
   const { id } = useParams<{ id: string }>();
   const [auction, setAuction] = useState<Auction | null>(null);
   const [bidAmount, setBidAmount] = useState('');
@@ -56,13 +60,20 @@ const AuctionDetail = () => {
     try {
       const response = await fetch(`http://localhost:9000/api/auctions/${id}/bids`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ bidderId: 1, amount: Number(bidAmount) })
+        headers: { 
+          'Content-Type': 'application/json',
+          ...auth?.getAuthHeader()
+        },
+        body: JSON.stringify({ bidderId: 2, amount: Number(bidAmount) })
       });
 
       if (!response.ok) {
-        const err = await response.json();
-        alert(err.message || 'Bid failed');
+        if (response.status === 403) {
+          alert('Access Denied: Only regular users can place bids.');
+        } else {
+          const err = await response.json().catch(() => ({ message: 'Bid failed' }));
+          alert(err.message || 'Bid failed');
+        }
       } else {
         setBidAmount('');
       }
@@ -76,8 +87,8 @@ const AuctionDetail = () => {
 
   return (
     <div className="card" style={{maxWidth: '600px', margin: '2rem auto'}}>
-      <h2>{auction.itemName}</h2>
-      <p>{auction.description}</p>
+      <h2>{auction.item?.name || (auction as any).itemName || 'Unnamed Item'}</h2>
+      <p>{auction.item?.description || (auction as any).description || 'No description available'}</p>
       
       <div style={{textAlign: 'center', margin: '2rem 0'}}>
         <span style={{fontSize: '1rem', color: '#666'}}>Current Price</span>
@@ -85,17 +96,23 @@ const AuctionDetail = () => {
         {message && <div style={{color: 'var(--primary)', fontWeight: 'bold'}}>{message}</div>}
       </div>
 
-      <form onSubmit={handleBid} style={{display: 'flex', gap: '1rem'}}>
-        <input 
-          type="number" 
-          value={bidAmount}
-          onChange={(e) => setBidAmount(e.target.value)}
-          placeholder="Enter your bid"
-          style={{flex: 1, padding: '0.5rem', borderRadius: '0.375rem', border: '1px solid #ddd'}}
-          required
-        />
-        <button type="submit" className="btn btn-primary">Place Bid</button>
-      </form>
+      {auth?.role === 'USER' ? (
+        <form onSubmit={handleBid} style={{display: 'flex', gap: '1rem'}}>
+          <input 
+            type="number" 
+            value={bidAmount}
+            onChange={(e) => setBidAmount(e.target.value)}
+            placeholder="Enter your bid"
+            style={{flex: 1, padding: '0.5rem', borderRadius: '0.375rem', border: '1px solid #ddd'}}
+            required
+          />
+          <button type="submit" className="btn btn-primary">Place Bid</button>
+        </form>
+      ) : (
+        <div style={{textAlign: 'center', padding: '1rem', background: '#f1f5f9', borderRadius: '0.5rem', color: '#64748b', fontSize: '0.875rem'}}>
+          {auth?.role === 'ADMIN' ? 'Admins cannot place bids.' : 'Please log in as a User to place bids.'}
+        </div>
+      )}
     </div>
   );
 };

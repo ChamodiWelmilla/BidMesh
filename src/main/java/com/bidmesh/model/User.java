@@ -23,6 +23,10 @@ public class User {
     @Column(nullable = false, unique = true)
     private String email;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Role role;
+
     @OneToMany(mappedBy = "creator", cascade = CascadeType.ALL)
     @JsonIgnore
     private List<Auction> createdAuctions;

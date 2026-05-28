@@ -21,6 +21,7 @@ public class DataSeeder implements CommandLineRunner {
 
     private final UserRepository userRepository;
     private final AuctionRepository auctionRepository;
+    private final com.bidmesh.repository.ItemRepository itemRepository;
 
     @Override
     public void run(String... args) throws Exception {
@@ -30,12 +31,33 @@ public class DataSeeder implements CommandLineRunner {
             User admin = User.builder()
                     .username("admin")
                     .email("admin@bidmesh.com")
+                    .role(com.bidmesh.model.Role.ADMIN)
                     .build();
             userRepository.save(admin);
 
-            Auction watch = Auction.builder()
-                    .itemName("Vintage Rolex Submariner")
+            User regularUser = User.builder()
+                    .username("user1")
+                    .email("user1@bidmesh.com")
+                    .role(com.bidmesh.model.Role.USER)
+                    .build();
+            userRepository.save(regularUser);
+
+            com.bidmesh.model.Item watchItem = com.bidmesh.model.Item.builder()
+                    .name("Vintage Rolex Submariner")
                     .description("A classic 1970s diving watch in excellent condition.")
+                    .category("Luxury Watches")
+                    .build();
+
+            com.bidmesh.model.Item guitarItem = com.bidmesh.model.Item.builder()
+                    .name("1959 Gibson Les Paul")
+                    .description("Rare sunburst finish, all original parts.")
+                    .category("Musical Instruments")
+                    .build();
+
+            itemRepository.saveAll(List.of(watchItem, guitarItem));
+
+            Auction watch = Auction.builder()
+                    .item(watchItem)
                     .startPrice(new BigDecimal("5000.00"))
                     .currentPrice(new BigDecimal("5000.00"))
                     .startTime(LocalDateTime.now())
@@ -45,8 +67,7 @@ public class DataSeeder implements CommandLineRunner {
                     .build();
 
             Auction guitar = Auction.builder()
-                    .itemName("1959 Gibson Les Paul")
-                    .description("Rare sunburst finish, all original parts.")
+                    .item(guitarItem)
                     .startPrice(new BigDecimal("25000.00"))
                     .currentPrice(new BigDecimal("25000.00"))
                     .startTime(LocalDateTime.now())
