@@ -34,4 +34,7 @@ public class Bid {
     @JoinColumn(name = "bidder_id", nullable = false)
     @JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "createdAuctions", "bids"})
     private User bidder;
+
+    @Column(unique = true, nullable = true)
+    private String kafkaMessageId;
 }

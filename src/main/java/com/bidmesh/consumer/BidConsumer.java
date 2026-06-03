@@ -9,6 +9,7 @@ import com.bidmesh.repository.BidRepository;
 import com.bidmesh.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,10 +27,20 @@ public class BidConsumer {
 
     @KafkaListener(topics = "auction-bids", groupId = "bidmesh-group")
     @Transactional
-    public void handleBidPlacedEvent(BidPlacedEvent event) {
-        log.info("Consuming bid event for auction {}: Amount {}", event.getAuctionId(), event.getAmount());
+    public void handleBidPlacedEvent(BidPlacedEvent event, ConsumerRecord<String, BidPlacedEvent> record) {
+        // Generate unique message ID from Kafka partition + offset
+        String kafkaMessageId = record.partition() + "-" + record.offset();
+        
+        log.info("Consuming bid event for auction {}: Amount {}. Kafka Message ID: {}", 
+                event.getAuctionId(), event.getAmount(), kafkaMessageId);
 
         try {
+            // IDEMPOTENCY CHECK: Check if this message was already processed
+            if (bidRepository.existsByKafkaMessageId(kafkaMessageId)) {
+                log.warn("Duplicate bid message detected (ID: {}). Skipping to prevent duplicate processing.", kafkaMessageId);
+                return;
+            }
+
             Auction auction = auctionRepository.findById(event.getAuctionId())
                     .orElseThrow(() -> new RuntimeException("Auction not found"));
 
@@ -42,12 +53,13 @@ public class BidConsumer {
                 return;
             }
 
-            // Persistence
+            // Persistence with Kafka message ID for idempotency
             Bid bid = Bid.builder()
                     .amount(event.getAmount())
                     .bidTime(event.getBidTime())
                     .auction(auction)
                     .bidder(bidder)
+                    .kafkaMessageId(kafkaMessageId) 
                     .build();
 
             auction.setCurrentPrice(event.getAmount());
@@ -65,7 +77,8 @@ public class BidConsumer {
 
             messagingTemplate.convertAndSend("/topic/auction/" + event.getAuctionId(), notification);
 
-            log.info("Successfully persisted and broadcasted bid for auction {}", event.getAuctionId());
+            log.info("Successfully persisted and broadcasted bid for auction {}. Kafka Message ID: {}", 
+                    event.getAuctionId(), kafkaMessageId);
         } catch (Exception e) {
             log.error("Error processing bid event: {}", e.getMessage());
         }
