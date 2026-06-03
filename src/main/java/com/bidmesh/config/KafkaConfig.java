@@ -14,7 +14,7 @@ public class KafkaConfig {
     public NewTopic auctionBidsTopic() {
         return TopicBuilder.name(AUCTION_BIDS_TOPIC)
                 .partitions(3)
-                .replicas(1)
+                .replicas(3)
                 .build();
     }
 }
