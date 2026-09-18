@@ -51,5 +51,5 @@ public class Auction {
     private List<Bid> bids;
 
     @Version
-    private Long version; // Optimistic locking for DB level integrity
+    private Long version;
 }

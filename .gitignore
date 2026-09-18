@@ -6,3 +6,33 @@ target/
 ### Node ###
 node_modules/
 dist/
+
+### Java & Maven ###
+apache-maven-3.9.6/
+*.class
+*.log
+*.jar
+*.war
+
+### IDEs ###
+# VS Code
+.vscode/
+
+# IntelliJ IDEA
+.idea/
+*.iws
+*.iml
+*.ipr
+
+# Eclipse
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+### OS ###
+.DS_Store
+Thumbs.db
