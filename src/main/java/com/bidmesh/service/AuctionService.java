@@ -26,8 +26,8 @@ import java.util.concurrent.TimeUnit;
 public class AuctionService {
 
     private final AuctionRepository auctionRepository;
-    private final BidRepository bidRepository;
     private final UserRepository userRepository;
+    private final com.bidmesh.repository.UserCredentialRepository userCredentialRepository;
     private final com.bidmesh.repository.ItemRepository itemRepository;
     private final RedissonClient redissonClient;
     private final RedisTemplate<String, Object> redisTemplate;
@@ -51,9 +51,6 @@ public class AuctionService {
         return auctionRepository.save(auction);
     }
 
-    /**
-     * Cache-Aside Pattern Implementation
-     */
     public Auction getAuctionDetails(Long id) {
         String key = AUCTION_CACHE_KEY + id;
         Object cachedData = redisTemplate.opsForValue().get(key);
@@ -82,10 +79,11 @@ public class AuctionService {
     private final org.springframework.kafka.core.KafkaTemplate<String, Object> kafkaTemplate;
     private static final String AUCTION_BIDS_TOPIC = "auction-bids";
 
-    /**
-     * Bid Placement with Redis Distributed Lock and Kafka Event Emission
-     */
-    public com.bidmesh.dto.BidResponse placeBid(Long auctionId, BidRequest bidRequest) {
+    public com.bidmesh.dto.BidResponse placeBid(Long auctionId, BidRequest bidRequest, String userEmail) {
+        com.bidmesh.model.UserCredential credential = userCredentialRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        bidRequest.setBidderId(credential.getUser().getId());
+
         String lockKey = AUCTION_LOCK_KEY + auctionId;
         RLock lock = redissonClient.getLock(lockKey);
 
@@ -93,18 +91,15 @@ public class AuctionService {
             if (lock.tryLock(5, 10, TimeUnit.SECONDS)) {
                 log.info("Lock acquired for auction {}", auctionId);
 
-                // Fetch current state (Prefer Cache for speed during high load)
                 Auction auction = getAuctionDetails(auctionId);
 
-                // Validation
                 if (auction.getStatus() != AuctionStatus.ACTIVE) {
                     throw new RuntimeException("Auction is not active");
                 }
                 if (bidRequest.getAmount().compareTo(auction.getCurrentPrice()) <= 0) {
-                    throw new RuntimeException("Bid amount must be higher than current price: " + auction.getCurrentPrice());
+                    throw new RuntimeException("Bid amount must be higher than current price: " + auction.getCurrentPrice().stripTrailingZeros().toPlainString());
                 }
 
-                // Prepare Event
                 com.bidmesh.event.BidPlacedEvent event = com.bidmesh.event.BidPlacedEvent.builder()
                         .auctionId(auctionId)
                         .bidderId(bidRequest.getBidderId())
@@ -112,7 +107,7 @@ public class AuctionService {
                         .bidTime(LocalDateTime.now())
                         .build();
 
-                // 1. Update Cache Immediately (so next validator sees the new price)
+                // 1. Update Cache Immediately
                 auction.setCurrentPrice(bidRequest.getAmount());
                 redisTemplate.opsForValue().set(AUCTION_CACHE_KEY + auctionId, auction, 10, TimeUnit.MINUTES);
 
@@ -137,5 +132,25 @@ public class AuctionService {
                 lock.unlock();
             }
         }
+    }
+
+    @Transactional
+    public Auction endAuction(Long id) {
+        Auction auction = auctionRepository.findById(id).orElseThrow(() -> new RuntimeException("Auction not found"));
+        auction.setStatus(AuctionStatus.COMPLETED);
+        auction.setEndTime(java.time.LocalDateTime.now());
+        auction = auctionRepository.save(auction);
+        redisTemplate.delete(AUCTION_CACHE_KEY + id);
+        return auction;
+    }
+
+    @Transactional
+    public void deleteAuction(Long id) {
+        Auction auction = auctionRepository.findById(id).orElseThrow(() -> new RuntimeException("Auction not found"));
+        if (auction.getBids() != null && !auction.getBids().isEmpty()) {
+            throw new RuntimeException("Cannot delete an auction that has bids. End the auction instead.");
+        }
+        auctionRepository.delete(auction);
+        redisTemplate.delete(AUCTION_CACHE_KEY + id);
     }
 }

@@ -6,6 +6,7 @@ interface Auction {
   item: {
     name: string;
     description: string;
+    imageUrl?: string;
   };
   currentPrice: number;
   endTime: string;
@@ -23,7 +24,8 @@ const AuctionList = () => {
         return res.json();
       })
       .then(data => {
-        setAuctions(Array.isArray(data) ? data : [data]);
+        const allAuctions = Array.isArray(data) ? data : [data];
+        setAuctions(allAuctions.filter((a: any) => a.status === 'ACTIVE'));
         setLoading(false);
       })
       .catch(err => {
@@ -45,7 +47,14 @@ const AuctionList = () => {
         <div className="auction-grid">
           {auctions.map(auction => (
             <div key={auction.id} className="card">
-              <h3>{auction.item?.name || (auction as any).itemName || 'Unnamed Item'}</h3>
+              {auction.item?.imageUrl && (
+                <img 
+                  src={auction.item.imageUrl.startsWith('http') ? auction.item.imageUrl : `http://localhost:9000${auction.item.imageUrl}`} 
+                  alt="Auction Item" 
+                  style={{width: '100%', height: '150px', objectFit: 'cover', borderRadius: '0.375rem', marginBottom: '1rem'}} 
+                />
+              )}
+              <h3 style={{marginTop: 0}}>{auction.item?.name || (auction as any).itemName || 'Unnamed Item'}</h3>
               <p className="price-tag">${auction.currentPrice}</p>
               <p>Ends: {new Date(auction.endTime).toLocaleString()}</p>
               <Link to={`/auction/${auction.id}`} className="btn btn-primary" style={{textDecoration: 'none', display: 'inline-block', marginTop: '1rem'}}>

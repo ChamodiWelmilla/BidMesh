@@ -2,7 +2,6 @@ package com.bidmesh.controller;
 
 import com.bidmesh.dto.BidRequest;
 import com.bidmesh.model.Auction;
-import com.bidmesh.model.Bid;
 import com.bidmesh.service.AuctionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -33,7 +32,22 @@ public class AuctionController {
     }
 
     @PostMapping("/{id}/bids")
-    public ResponseEntity<com.bidmesh.dto.BidResponse> placeBid(@PathVariable Long id, @RequestBody BidRequest bidRequest) {
-        return ResponseEntity.ok(auctionService.placeBid(id, bidRequest));
+    public ResponseEntity<com.bidmesh.dto.BidResponse> placeBid(@PathVariable Long id, @RequestBody BidRequest bidRequest, java.security.Principal principal) {
+        return ResponseEntity.ok(auctionService.placeBid(id, bidRequest, principal.getName()));
+    }
+
+    @PutMapping("/{id}/end")
+    public ResponseEntity<Auction> endAuction(@PathVariable Long id) {
+        return ResponseEntity.ok(auctionService.endAuction(id));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteAuction(@PathVariable Long id) {
+        try {
+            auctionService.deleteAuction(id);
+            return ResponseEntity.ok().build();
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(java.util.Collections.singletonMap("message", e.getMessage()));
+        }
     }
 }

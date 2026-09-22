@@ -7,4 +7,5 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface BidRepository extends JpaRepository<Bid, Long> {
     boolean existsByKafkaMessageId(String kafkaMessageId);
+    java.util.List<Bid> findByBidderIdOrderByBidTimeDesc(Long bidderId);
 }
