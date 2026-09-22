@@ -70,7 +70,6 @@ function App() {
             <Link to="/" className="logo">BidMesh</Link>
             {isAuthenticated && (
               <nav style={{display: 'flex', gap: '1.5rem'}}>
-                <Link to="/" style={{textDecoration: 'none', color: 'var(--secondary)', fontWeight: 500}}>Dashboard</Link>
                 <Link to="/auctions" style={{textDecoration: 'none', color: 'var(--secondary)', fontWeight: 500}}>Live Auctions</Link>
               </nav>
             )}
