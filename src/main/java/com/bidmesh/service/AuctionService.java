@@ -109,6 +109,13 @@ public class AuctionService {
 
                 // 1. Update Cache Immediately
                 auction.setCurrentPrice(bidRequest.getAmount());
+                if (auction.getBids() == null) {
+                    auction.setBids(new java.util.ArrayList<>());
+                }
+                com.bidmesh.model.Bid cachedBid = new com.bidmesh.model.Bid();
+                cachedBid.setAmount(bidRequest.getAmount());
+                auction.getBids().add(cachedBid);
+                
                 redisTemplate.opsForValue().set(AUCTION_CACHE_KEY + auctionId, auction, 10, TimeUnit.MINUTES);
 
                 // 2. Publish to Kafka (Partitioned by auctionId to ensure ordering)

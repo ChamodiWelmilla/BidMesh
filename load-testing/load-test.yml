@@ -1,0 +1,18 @@
+config:
+  target: "http://localhost:9000"
+  processor: "./helpers.js"
+  phases:
+    - duration: 15
+      arrivalRate: 5
+      name: "Bidding War"
+
+scenarios:
+  - name: "Place a live bid"
+    flow:
+      - function: "generateBid"
+      - post:
+          url: "/api/auctions/YOUR_AUCTION_ID/bids"
+          headers:
+            Authorization: "Bearer YOUR_JWT_TOKEN_HERE"
+          json:
+            amount: "{{ amount }}"

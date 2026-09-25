@@ -79,3 +79,27 @@ The platform uses JWT-based authentication.
 
 * **Admin Role (`ROLE_ADMIN`):** Has exclusive access to create auctions, upload/edit images via Cloudinary, and end or delete auctions early.
 * **User Role (`ROLE_USER`):** Can browse active auctions, view their personal bid history, and place live bids via WebSockets.
+
+---
+
+## ⚡ Load Testing (Artillery)
+
+BidMesh includes a robust concurrency testing suite designed to prove that the backend (backed by Redis distributed locks) is immune to race conditions during high-traffic bidding wars. 
+
+The provided Artillery test simulates **75 virtual users** simultaneously placing bids on a single auction item over a 15-second window.
+
+### How to run the Load Test:
+1. Install Artillery globally on your machine:
+   ```bash
+   npm install -g artillery
+   ```
+2. Log into the BidMesh frontend and grab your active JWT Token from the browser's Developer Tools (Application -> Local Storage -> `jwtToken`).
+3. Configure the test files with your active data:
+   * In `load-test.yml`, replace `YOUR_AUCTION_ID` with an active auction ID (e.g., `1`).
+   * In `load-test.yml`, replace `YOUR_JWT_TOKEN_HERE` with your copied JWT token.
+   * In `helpers.js`, change `currentBid = 0;` to a number higher than your auction's current price.
+4. Open a terminal in the `load-testing/` directory and unleash the test:
+   ```bash
+   artillery run load-test.yml
+   ```
+*If successful, you will see the backend mathematically reject conflicting concurrent bids with HTTP `400 Bad Request` while perfectly processing valid bids with `200 OK`, all with zero server crashes.*
