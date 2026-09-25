@@ -17,22 +17,22 @@ Before you begin, ensure you have the following installed:
 
 ---
 
-## ☁️ Cloudinary Setup (Image Hosting)
+## ☁️ AWS S3 Setup (Image Hosting)
 
-BidMesh uses Cloudinary to host auction item images securely on the cloud. You must set this up before running the backend.
+BidMesh uses Amazon Web Services (AWS) S3 to host auction item images securely in the cloud. You must configure your S3 bucket before running the backend.
 
-1. Go to [Cloudinary](https://cloudinary.com/) and create a free account.
-2. Navigate to your Cloudinary Dashboard and locate your **Product Environment Credentials**:
-   * Cloud Name
-   * API Key
-   * API Secret
-3. Open the backend properties file: `src/main/resources/application.properties`
-4. Scroll to the bottom and paste your keys:
+1. Log into your **AWS Console** and create an **S3 Bucket**.
+2. **Crucial:** When creating the bucket, uncheck "Block all public access" so images can be viewed on the frontend.
+3. Once created, go to the bucket's **Permissions** tab, edit the **Bucket Policy**, and add a policy allowing `s3:GetObject` for `Principal: *`.
+4. Go to **AWS IAM**, and attach the `AmazonS3FullAccess` policy. Generate an **Access Key** and **Secret Key**.
+5. Open the backend properties file: `src/main/resources/application.properties`
+6. Scroll to the bottom and paste your credentials:
    ```properties
-   # Cloudinary Setup
-   cloudinary.cloud_name=YOUR_CLOUD_NAME
-   cloudinary.api_key=YOUR_API_KEY
-   cloudinary.api_secret=YOUR_API_SECRET
+   # AWS S3 Setup
+   aws.s3.region=YOUR_AWS_REGION (e.g., ap-south-1)
+   aws.s3.bucket=YOUR_BUCKET_NAME
+   aws.s3.access-key=YOUR_ACCESS_KEY
+   aws.s3.secret-key=YOUR_SECRET_KEY
    ```
 
 ---
