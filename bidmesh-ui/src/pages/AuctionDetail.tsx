@@ -138,10 +138,43 @@ const AuctionDetail = () => {
         </div>
         {auth?.role === 'ROLE_ADMIN' && auction.status !== 'COMPLETED' && (
           <div style={{display: 'flex', gap: '0.5rem', flexWrap: 'wrap', justifyContent: 'flex-end'}}>
-            <label className="btn" style={{border: '1px solid var(--primary)', color: 'var(--primary)', cursor: 'pointer', fontSize: '0.8rem', padding: '0.25rem 0.5rem'}}>
-              {auction.item?.imageUrl ? 'Edit Image' : 'Upload Image'}
-              <input type="file" accept="image/*" style={{display: 'none'}} onChange={handleImageUpload} />
-            </label>
+            {(auction.bids && auction.bids.length > 0) ? (
+              <div 
+                className="btn" 
+                title="Cannot change image after bidding has started"
+                style={{
+                  border: '1px solid #ccc', 
+                  color: '#999', 
+                  cursor: 'not-allowed', 
+                  fontSize: '0.8rem', 
+                  padding: '0.25rem 0.5rem',
+                  background: '#f3f4f6'
+                }}
+              >
+                {auction.item?.imageUrl ? 'Edit Image' : 'Upload Image'}
+              </div>
+            ) : (
+              <label 
+                className="btn" 
+                title="Upload or edit image"
+                style={{
+                  border: '1px solid var(--primary)', 
+                  color: 'var(--primary)', 
+                  cursor: 'pointer', 
+                  fontSize: '0.8rem', 
+                  padding: '0.25rem 0.5rem',
+                  background: 'transparent'
+                }}
+              >
+                {auction.item?.imageUrl ? 'Edit Image' : 'Upload Image'}
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  style={{display: 'none'}} 
+                  onChange={handleImageUpload} 
+                />
+              </label>
+            )}
             {(auction.bids && auction.bids.length > 0) && (
               <button 
                 onClick={async () => {

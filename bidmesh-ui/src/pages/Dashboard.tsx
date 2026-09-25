@@ -78,6 +78,19 @@ const Dashboard = () => {
           totalBids: auctions.reduce((acc, a) => acc + (a.bids?.length || 0), 0),
           totalUsers: 2
         });
+        
+        if (auth?.role === 'ROLE_USER') {
+          fetch('http://localhost:9000/api/users/me/bids', {
+            headers: auth?.getAuthHeader()
+          })
+          .then(res => res.ok ? res.json() : [])
+          .then(userBids => {
+            const count = Array.isArray(userBids) ? userBids.length : 0;
+            setStats(prev => ({ ...prev, totalBids: count }));
+          })
+          .catch(err => console.error("Could not fetch personal bid count"));
+        }
+
         setLoading(false);
       })
       .catch(err => {
