@@ -28,6 +28,7 @@ public class AuctionService {
     private final AuctionRepository auctionRepository;
     private final UserRepository userRepository;
     private final com.bidmesh.repository.UserCredentialRepository userCredentialRepository;
+    private final S3Service s3Service;
     private final com.bidmesh.repository.ItemRepository itemRepository;
     private final RedissonClient redissonClient;
     private final RedisTemplate<String, Object> redisTemplate;
@@ -157,6 +158,11 @@ public class AuctionService {
         if (auction.getBids() != null && !auction.getBids().isEmpty()) {
             throw new RuntimeException("Cannot delete an auction that has bids. End the auction instead.");
         }
+        
+        if (auction.getItem() != null && auction.getItem().getImageUrl() != null) {
+            s3Service.deleteImageFromS3(auction.getItem().getImageUrl());
+        }
+        
         auctionRepository.delete(auction);
         redisTemplate.delete(AUCTION_CACHE_KEY + id);
     }

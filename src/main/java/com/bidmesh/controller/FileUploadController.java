@@ -70,9 +70,11 @@ public class FileUploadController {
                     : ".jpg";
             String uniqueFileName = UUID.randomUUID().toString() + extension;
 
+            String uploadKey = "raw/" + uniqueFileName;
+
             PutObjectRequest putObjectRequest = PutObjectRequest.builder()
                     .bucket(bucketName)
-                    .key(uniqueFileName)
+                    .key(uploadKey)
                     .contentType(file.getContentType())
                     .build();
 

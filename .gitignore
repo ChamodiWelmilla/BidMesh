@@ -36,3 +36,6 @@ apache-maven-3.9.6/
 ### OS ###
 .DS_Store
 Thumbs.db
+
+# Lambda Deployment
+lambda-compressor/node_modules/

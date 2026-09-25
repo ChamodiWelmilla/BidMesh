@@ -35,6 +35,13 @@ BidMesh uses Amazon Web Services (AWS) S3 to host auction item images securely i
    aws.s3.secret-key=YOUR_SECRET_KEY
    ```
 
+### ⚡ AWS Lambda Setup (Image Compression)
+
+1. Go to AWS Lambda and create a new **Node.js** function.
+2. Under the Code tab, click **Upload from -> .zip file** and upload `lambda-compressor.zip` (located in this repository).
+3. Go to Configuration -> Permissions, click the Execution Role, and attach the `AmazonS3FullAccess` policy.
+4. Click **+ Add trigger**, select S3, choose your image bucket, and set the **Prefix** exactly to `raw/`.
+
 ---
 
 ## 🛠️ Project Setup Instructions
