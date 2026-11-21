@@ -20,14 +20,37 @@ spring:
             allowCredentials: true
       
       routes:
-        # Route for Auction & Bid REST API
-        - id: bidmesh-backend-api
-          uri: http://localhost:8080
+        # Route for Authentication & User Microservice (:8081)
+        - id: auth-service-auth
+          uri: http://localhost:8081
           predicates:
-            - Path=/api/**
-        
-        # Route for WebSockets (Stomp/SockJS)
-        - id: bidmesh-backend-ws
-          uri: http://localhost:8080
+            - Path=/api/auth/**
+
+        - id: auth-service-users
+          uri: http://localhost:8081
+          predicates:
+            - Path=/api/users/**
+
+        # Route for Bidding Engine Microservice (:8083)
+        - id: bidding-service-bids
+          uri: http://localhost:8083
+          predicates:
+            - Path=/api/auctions/{id}/bids
+            - Method=POST
+
+        # Route for WebSockets (Stomp/SockJS) on Bidding Service (:8083)
+        - id: bidding-service-ws
+          uri: http://localhost:8083
           predicates:
             - Path=/ws-auction/**
+
+        # Route for Auction & Item Catalog Microservice (:8082)
+        - id: catalog-service-items
+          uri: http://localhost:8082
+          predicates:
+            - Path=/api/items/**
+
+        - id: catalog-service-auctions
+          uri: http://localhost:8082
+          predicates:
+            - Path=/api/auctions/**
