@@ -24,7 +24,6 @@
 	</properties>
 
 	<modules>
-		<module>bidmesh-common</module>
 		<module>bidmesh-auth-service</module>
 		<module>bidmesh-catalog-service</module>
 		<module>bidmesh-bidding-service</module>
@@ -39,11 +38,6 @@
 				<version>${spring-cloud.version}</version>
 				<type>pom</type>
 				<scope>import</scope>
-			</dependency>
-			<dependency>
-				<groupId>com.bidmesh</groupId>
-				<artifactId>bidmesh-common</artifactId>
-				<version>${project.version}</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>

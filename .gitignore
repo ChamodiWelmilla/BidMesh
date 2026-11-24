@@ -1,18 +1,21 @@
 target/
-!.mvn/wrapper/maven-wrapper.jar
-!**/src/main/**/target/
-!**/src/test/**/target/
 
 ### Node ###
 node_modules/
 dist/
 
 ### Java & Maven ###
-apache-maven-3.9.6/
+apache-maven-*/
 *.class
 *.log
 *.jar
 *.war
+!/.mvn/wrapper/maven-wrapper.jar
+
+### Local configuration ###
+.env
+.env.*
+!.env.example
 
 ### IDEs ###
 # VS Code

@@ -1,7 +1,7 @@
 package com.bidmesh.bidding.repository;
 
-import com.bidmesh.model.Auction;
+import com.bidmesh.bidding.model.AuctionProjection;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface AuctionRepository extends JpaRepository<Auction, Long> {
+public interface AuctionRepository extends JpaRepository<AuctionProjection, Long> {
 }

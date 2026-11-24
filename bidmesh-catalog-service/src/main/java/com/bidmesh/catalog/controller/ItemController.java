@@ -1,7 +1,7 @@
 package com.bidmesh.catalog.controller;
 
 import com.bidmesh.catalog.repository.ItemRepository;
-import com.bidmesh.model.Item;
+import com.bidmesh.catalog.model.Item;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

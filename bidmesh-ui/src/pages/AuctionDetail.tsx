@@ -13,13 +13,14 @@ interface Auction {
     imageUrl?: string;
   };
   currentPrice: number;
-  bids?: any[];
+  bidCount: number;
 }
 
 interface BidNotification {
   auctionId: number;
   currentPrice: number;
   lastBidder: string;
+  bidCount: number;
 }
 
 const AuctionDetail = () => {
@@ -53,7 +54,7 @@ const AuctionDetail = () => {
       setAuction(prev => prev ? { 
         ...prev, 
         currentPrice: notification.currentPrice,
-        bids: [...(prev.bids || []), { dummy: true }]
+        bidCount: notification.bidCount
       } : null);
       setMessage(`New bid by ${notification.lastBidder}!`);
       setTimeout(() => setMessage(''), 5000);
@@ -72,7 +73,7 @@ const AuctionDetail = () => {
           'Content-Type': 'application/json',
           ...auth?.getAuthHeader()
         },
-        body: JSON.stringify({ bidderId: 2, amount: Number(bidAmount) })
+        body: JSON.stringify({ amount: Number(bidAmount) })
       });
 
       if (!response.ok) {
@@ -138,7 +139,7 @@ const AuctionDetail = () => {
         </div>
         {auth?.role === 'ROLE_ADMIN' && auction.status !== 'COMPLETED' && (
           <div style={{display: 'flex', gap: '0.5rem', flexWrap: 'wrap', justifyContent: 'flex-end'}}>
-            {(auction.bids && auction.bids.length > 0) ? (
+            {auction.bidCount > 0 ? (
               <div 
                 className="btn" 
                 title="Cannot change image after bidding has started"
@@ -175,7 +176,7 @@ const AuctionDetail = () => {
                 />
               </label>
             )}
-            {(auction.bids && auction.bids.length > 0) && (
+            {auction.bidCount > 0 && (
               <button 
                 onClick={async () => {
                   try {
@@ -199,7 +200,7 @@ const AuctionDetail = () => {
             )}
             <button 
               onClick={async () => {
-                if (auction.bids && auction.bids.length > 0) return;
+                if (auction.bidCount > 0) return;
                 if (!window.confirm("Are you sure you want to delete this auction?")) return;
                 try {
                   const res = await fetch(`http://localhost:9000/api/auctions/${id}`, {
@@ -215,15 +216,15 @@ const AuctionDetail = () => {
                   }
                 } catch (err) { toast.error('Network error'); }
               }}
-              disabled={auction.bids && auction.bids.length > 0}
-              title={(auction.bids && auction.bids.length > 0) ? "Cannot delete an auction that has bids" : "Delete Auction"}
+              disabled={auction.bidCount > 0}
+              title={auction.bidCount > 0 ? "Cannot delete an auction that has bids" : "Delete Auction"}
               className="btn" 
               style={{
-                border: `1px solid ${(auction.bids && auction.bids.length > 0) ? '#ccc' : 'var(--danger)'}`, 
-                color: (auction.bids && auction.bids.length > 0) ? '#999' : 'var(--danger)', 
-                cursor: (auction.bids && auction.bids.length > 0) ? 'not-allowed' : 'pointer', 
+                border: `1px solid ${auction.bidCount > 0 ? '#ccc' : 'var(--danger)'}`,
+                color: auction.bidCount > 0 ? '#999' : 'var(--danger)',
+                cursor: auction.bidCount > 0 ? 'not-allowed' : 'pointer',
                 fontSize: '0.8rem', padding: '0.25rem 0.5rem', 
-                background: (auction.bids && auction.bids.length > 0) ? '#f3f4f6' : 'transparent'
+                background: auction.bidCount > 0 ? '#f3f4f6' : 'transparent'
               }}
             >
               Delete Auction

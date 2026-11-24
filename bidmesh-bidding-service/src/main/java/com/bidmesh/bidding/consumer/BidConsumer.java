@@ -1,84 +1,60 @@
 package com.bidmesh.bidding.consumer;
 
-import com.bidmesh.bidding.repository.AuctionRepository;
-import com.bidmesh.bidding.repository.BidRepository;
-import com.bidmesh.bidding.repository.UserRepository;
-import com.bidmesh.dto.BidNotification;
-import com.bidmesh.event.BidPlacedEvent;
-import com.bidmesh.model.Auction;
-import com.bidmesh.model.Bid;
-import com.bidmesh.model.User;
+import com.bidmesh.bidding.dto.BidNotification;
+import com.bidmesh.bidding.messaging.BidPlacedEvent;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+
+import java.time.Duration;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class BidConsumer {
+    private static final String PROCESSED_BID_KEY_PREFIX = "bid-notification:processed:";
+    private static final Duration DEDUPLICATION_TTL = Duration.ofDays(8);
 
-    private final AuctionRepository auctionRepository;
-    private final BidRepository bidRepository;
-    private final UserRepository userRepository;
+    private final ObjectMapper objectMapper;
     private final SimpMessagingTemplate messagingTemplate;
+    private final StringRedisTemplate redisTemplate;
 
-    @KafkaListener(topics = "auction-bids", groupId = "bidmesh-group")
-    @Transactional
-    public void handleBidPlacedEvent(BidPlacedEvent event, ConsumerRecord<String, BidPlacedEvent> record) {
-        String kafkaMessageId = record.partition() + "-" + record.offset();
-        
-        log.info("Consuming bid event for auction {}: Amount {}. Kafka Message ID: {}", 
-                event.getAuctionId(), event.getAmount(), kafkaMessageId);
+    @KafkaListener(topics = "auction-bids", groupId = "bidmesh-bidding-websocket")
+    public void broadcastBid(String payload) throws JsonProcessingException {
+        BidPlacedEvent event = objectMapper.readValue(payload, BidPlacedEvent.class);
+        if (event.getBidId() == null) {
+            throw new IllegalArgumentException("Bid event is missing its bid ID");
+        }
+
+        String processedKey = PROCESSED_BID_KEY_PREFIX + event.getBidId();
+        Boolean claimed = redisTemplate.opsForValue().setIfAbsent(processedKey, "1", DEDUPLICATION_TTL);
+        if (claimed == null) {
+            throw new IllegalStateException("Could not claim bid notification idempotency key");
+        }
+        if (!claimed) {
+            log.debug("Skipping duplicate bid notification for bid {}", event.getBidId());
+            return;
+        }
+
+        BidNotification notification = BidNotification.builder()
+                .auctionId(event.getAuctionId())
+                .currentPrice(event.getAmount())
+                .lastBidder(event.getBidderUsername())
+                .bidTime(event.getBidTime())
+                .bidCount(event.getBidCount())
+                .build();
 
         try {
-            // IDEMPOTENCY CHECK
-            if (bidRepository.existsByKafkaMessageId(kafkaMessageId)) {
-                log.warn("Duplicate bid message detected (ID: {}). Skipping.", kafkaMessageId);
-                return;
-            }
-
-            Auction auction = auctionRepository.findById(event.getAuctionId())
-                    .orElseThrow(() -> new RuntimeException("Auction not found"));
-
-            User bidder = userRepository.findById(event.getBidderId())
-                    .orElseThrow(() -> new RuntimeException("User not found"));
-
-            if (event.getAmount().compareTo(auction.getCurrentPrice()) <= 0) {
-                log.warn("Delayed event for lower bid detected. Skipping persistence.");
-                return;
-            }
-
-            Bid bid = Bid.builder()
-                    .amount(event.getAmount())
-                    .bidTime(event.getBidTime())
-                    .auction(auction)
-                    .bidder(bidder)
-                    .kafkaMessageId(kafkaMessageId) 
-                    .build();
-
-            auction.setCurrentPrice(event.getAmount());
-            
-            bidRepository.save(bid);
-            auctionRepository.save(auction);
-
-            // BROADCAST via WebSocket
-            BidNotification notification = BidNotification.builder()
-                    .auctionId(event.getAuctionId())
-                    .currentPrice(event.getAmount())
-                    .lastBidder(bidder.getUsername())
-                    .bidTime(event.getBidTime())
-                    .build();
-
             messagingTemplate.convertAndSend("/topic/auction/" + event.getAuctionId(), notification);
-
-            log.info("Successfully persisted and broadcasted bid for auction {}. Kafka Message ID: {}", 
-                    event.getAuctionId(), kafkaMessageId);
-        } catch (Exception e) {
-            log.error("Error processing bid event: {}", e.getMessage());
+        } catch (RuntimeException e) {
+            redisTemplate.delete(processedKey);
+            throw e;
         }
+        log.info("Broadcast bid for auction {} at {}", event.getAuctionId(), event.getAmount());
     }
 }

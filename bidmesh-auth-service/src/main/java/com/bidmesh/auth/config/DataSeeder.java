@@ -2,9 +2,9 @@ package com.bidmesh.auth.config;
 
 import com.bidmesh.auth.repository.UserCredentialRepository;
 import com.bidmesh.auth.repository.UserRepository;
-import com.bidmesh.model.Role;
-import com.bidmesh.model.User;
-import com.bidmesh.model.UserCredential;
+import com.bidmesh.auth.model.Role;
+import com.bidmesh.auth.model.User;
+import com.bidmesh.auth.model.UserCredential;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;

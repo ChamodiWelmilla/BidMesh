@@ -1,24 +1,56 @@
 version: '3.8'
 
 services:
-  postgres:
+  # Auth database – dedicated instance
+  postgres-auth:
     image: postgres:15-alpine
-    container_name: bidmesh-postgres
+    container_name: bidmesh-postgres-auth
     environment:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
-      POSTGRES_DB: bidmesh
+      POSTGRES_DB: bidmesh_auth
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./docker/init-multidb.sql:/docker-entrypoint-initdb.d/init-multidb.sql:ro
+      - postgres_auth:/var/lib/postgresql/data
 
-  redis:
-    image: redis:7-alpine
-    container_name: bidmesh-redis
+  # Catalog database – dedicated instance
+  postgres-catalog:
+    image: postgres:15-alpine
+    container_name: bidmesh-postgres-catalog
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: bidmesh_catalog
     ports:
-      - "6379:6379"
+      - "5434:5432"
+    volumes:
+      - postgres_catalog:/var/lib/postgresql/data
+
+  # Bidding database – dedicated instance
+  postgres-bidding:
+    image: postgres:15-alpine
+    container_name: bidmesh-postgres-bidding
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: bidmesh_bidding
+    ports:
+      - "5435:5432"
+    volumes:
+      - postgres_bidding:/var/lib/postgresql/data
+
+  redis-catalog:
+    image: redis:7-alpine
+    container_name: bidmesh-redis-catalog
+    ports:
+      - "6380:6379"
+
+  redis-bidding:
+    image: redis:7-alpine
+    container_name: bidmesh-redis-bidding
+    ports:
+      - "6381:6379"
 
   kafka:
     image: apache/kafka:3.7.0
@@ -38,4 +70,6 @@ services:
       - KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR=1
 
 volumes:
-  postgres_data:
+  postgres_auth:
+  postgres_catalog:
+  postgres_bidding:

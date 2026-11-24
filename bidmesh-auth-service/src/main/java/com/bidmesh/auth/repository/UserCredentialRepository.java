@@ -1,6 +1,6 @@
 package com.bidmesh.auth.repository;
 
-import com.bidmesh.model.UserCredential;
+import com.bidmesh.auth.model.UserCredential;
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Optional;
 

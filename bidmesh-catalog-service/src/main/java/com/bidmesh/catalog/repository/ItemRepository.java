@@ -1,6 +1,6 @@
 package com.bidmesh.catalog.repository;
 
-import com.bidmesh.model.Item;
+import com.bidmesh.catalog.model.Item;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface ItemRepository extends JpaRepository<Item, Long> {

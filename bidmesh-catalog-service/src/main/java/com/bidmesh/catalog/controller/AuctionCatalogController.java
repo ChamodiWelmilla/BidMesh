@@ -1,9 +1,11 @@
 package com.bidmesh.catalog.controller;
 
 import com.bidmesh.catalog.service.AuctionCatalogService;
-import com.bidmesh.model.Auction;
+import com.bidmesh.catalog.model.Auction;
+import com.bidmesh.catalog.security.CatalogPrincipal;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Collections;
@@ -27,10 +29,11 @@ public class AuctionCatalogController {
     }
 
     @PostMapping
-    public ResponseEntity<Auction> createAuction(@RequestBody Auction auction, 
-                                               @RequestParam Long creatorId, 
-                                               @RequestParam Long itemId) {
-        return ResponseEntity.ok(auctionService.createAuction(auction, creatorId, itemId));
+    public ResponseEntity<Auction> createAuction(@RequestBody Auction auction,
+                                                 @RequestParam Long itemId,
+                                                 @AuthenticationPrincipal CatalogPrincipal principal) {
+        return ResponseEntity.ok(auctionService.createAuction(
+                auction, principal.userId(), principal.username(), itemId));
     }
 
     @PutMapping("/{id}/end")

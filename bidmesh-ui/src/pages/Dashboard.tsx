@@ -19,6 +19,7 @@ interface Auction {
   currentPrice: number;
   status: string;
   endTime: string;
+  bidCount: number;
 }
 
 const Dashboard = () => {
@@ -42,7 +43,7 @@ const Dashboard = () => {
 
   const fetchBidHistory = async () => {
     try {
-      const res = await fetch('http://localhost:9000/api/users/me/bids', {
+      const res = await fetch('http://localhost:9000/api/bids/me', {
         headers: auth?.getAuthHeader()
       });
       if (res.ok) {
@@ -75,12 +76,12 @@ const Dashboard = () => {
         setStats({
           activeAuctions: auctions.filter((a: any) => a.status === 'ACTIVE').length,
           completedAuctions: auctions.filter((a: any) => a.status === 'COMPLETED').length,
-          totalBids: auctions.reduce((acc, a) => acc + (a.bids?.length || 0), 0),
+          totalBids: auctions.reduce((acc, a) => acc + (a.bidCount || 0), 0),
           totalUsers: 2
         });
         
         if (auth?.role === 'ROLE_USER') {
-          fetch('http://localhost:9000/api/users/me/bids', {
+          fetch('http://localhost:9000/api/bids/me', {
             headers: auth?.getAuthHeader()
           })
           .then(res => res.ok ? res.json() : [])
@@ -126,7 +127,7 @@ const Dashboard = () => {
       const createdItemId = newItem.id;
 
       // 2. Create the Auction with the new Item ID
-      const response = await fetch(`http://localhost:9000/api/auctions?creatorId=1&itemId=${createdItemId}`, {
+      const response = await fetch(`http://localhost:9000/api/auctions?itemId=${createdItemId}`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',

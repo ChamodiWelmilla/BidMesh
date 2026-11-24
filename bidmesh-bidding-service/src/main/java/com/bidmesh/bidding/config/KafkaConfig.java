@@ -5,6 +5,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.config.TopicBuilder;
 
+import java.time.Duration;
+import java.util.Map;
+
 @Configuration
 public class KafkaConfig {
 
@@ -15,6 +18,7 @@ public class KafkaConfig {
         return TopicBuilder.name(AUCTION_BIDS_TOPIC)
                 .partitions(3)
                 .replicas(1)
+                .configs(Map.of("retention.ms", Long.toString(Duration.ofDays(7).toMillis())))
                 .build();
     }
 }

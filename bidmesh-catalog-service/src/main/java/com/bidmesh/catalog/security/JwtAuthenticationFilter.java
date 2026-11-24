@@ -1,6 +1,7 @@
 package com.bidmesh.catalog.security;
 
-import com.bidmesh.security.JwtUtil;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -13,7 +14,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.Collections;
 import java.util.List;
 
 @Component
@@ -26,28 +26,29 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
 
-        final String authHeader = request.getHeader("Authorization");
+        String authHeader = request.getHeader("Authorization");
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        final String jwt = authHeader.substring(7);
         try {
-            String email = jwtUtil.extractEmail(jwt);
-            if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                String role = jwtUtil.extractClaim(jwt, claims -> claims.get("role", String.class));
-                List<SimpleGrantedAuthority> authorities = role != null 
-                        ? Collections.singletonList(new SimpleGrantedAuthority(role.startsWith("ROLE_") ? role : "ROLE_" + role))
-                        : Collections.emptyList();
-
-                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                        email, null, authorities
-                );
-                SecurityContextHolder.getContext().setAuthentication(authToken);
+            Claims claims = jwtUtil.parseToken(authHeader.substring(7));
+            Long userId = claims.get("userId", Long.class);
+            String email = claims.getSubject();
+            String username = claims.get("displayName", String.class);
+            String role = claims.get("role", String.class);
+            if (userId != null && email != null && username != null && role != null
+                    && SecurityContextHolder.getContext().getAuthentication() == null) {
+                String authority = role.startsWith("ROLE_") ? role : "ROLE_" + role;
+                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                        new CatalogPrincipal(userId, email, username),
+                        null,
+                        List.of(new SimpleGrantedAuthority(authority)));
+                SecurityContextHolder.getContext().setAuthentication(authentication);
             }
-        } catch (Exception e) {
-            // Invalid token
+        } catch (JwtException | IllegalArgumentException e) {
+            SecurityContextHolder.clearContext();
         }
 
         filterChain.doFilter(request, response);
